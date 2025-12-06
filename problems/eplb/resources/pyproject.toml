@@ -1,0 +1,16 @@
+[project]
+name = "eplb-problem"
+version = "0.1.0"
+description = "Resources for EPLB problem"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+dependencies = [
+  "torch>=2.0.0",
+  "numpy>=1.24.0",
+]
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+

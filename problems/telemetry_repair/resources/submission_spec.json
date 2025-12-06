@@ -1,0 +1,19 @@
+{
+  "problem_name": "telemetry_repair",
+  "version": "1.0",
+  "timeout_seconds": 60,
+  "description": "Repair corrupted network telemetry data by detecting and fixing inconsistencies",
+  "evaluation_metrics": {
+    "primary": "counter_repair_accuracy",
+    "secondary": "confidence_calibration",
+    "tertiary": "status_repair_accuracy"
+  },
+  "scoring": {
+    "weights": {
+      "counter_repair_accuracy": 0.75,
+      "status_repair_accuracy": 0.05,
+      "confidence_calibration": 0.20
+    }
+  }
+}
+

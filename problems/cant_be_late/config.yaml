@@ -1,0 +1,13 @@
+{
+  "dependencies": {
+    "uv_project": "resources/cant-be-late-simulator"
+  },
+  "datasets": [
+    {
+      "type": "local_tar",
+      "path": "resources/real_traces.tar.gz",
+      "target": "resources/cant-be-late-simulator/data",
+      "expected_glob": "real/ddl=search+task=48+overhead=*/real/*/traces/random_start/*.json"
+    }
+  ]
+}

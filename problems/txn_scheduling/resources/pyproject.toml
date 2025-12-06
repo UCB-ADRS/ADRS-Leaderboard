@@ -1,0 +1,18 @@
+[project]
+name = "txn-scheduling-problem"
+version = "0.1.0"
+description = "Resources for TXN_SCHEDULING problem"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = [
+  "numpy>=1.24",
+]
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = []
+
+

@@ -1,0 +1,13 @@
+{
+  "dependencies": {
+    "uv_project": ""
+  },
+  "datasets": [
+    {
+      "type": "git_clone",
+      "path": "",
+      "target": "resources/openevolve-mast",
+      "expected_glob": "example_mas/programdev/names_*.txt"
+    }
+  ]
+}

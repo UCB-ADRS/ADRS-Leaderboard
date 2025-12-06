@@ -1,0 +1,41 @@
+# Solution:Problem pairs
+# Format: solution_path:problem_name
+
+# LLM SQL
+llm_sql/human_SOTA:llm_sql
+llm_sql/openevolve:llm_sql
+llm_sql/shinkaevolve:llm_sql
+llm_sql/gepa:llm_sql
+
+# EPLB (Expert Parallelism Load Balancer)
+eplb/human_SOTA:eplb
+eplb/openevolve:eplb
+eplb/shinkaevolve:eplb
+eplb/gepa:eplb
+
+# PRISM (GPU Model Placement)
+prism/human_SOTA:prism
+prism/gepa:prism
+prism/openevolve:prism
+prism/shinkaevolve:prism
+
+# Multiagent System
+multiagent_system/baseline:multiagent_system
+
+# Cloudcast
+cloudcast/baseline:cloudcast
+cloudcast/gepa:cloudcast
+cloudcast/openevolve:cloudcast
+cloudcast/shinkaevolve:cloudcast
+
+# Telemetry Repair (Network Telemetry Data Repair)
+telemetry_repair/human_SOTA:telemetry_repair
+telemetry_repair/gepa:telemetry_repair
+telemetry_repair/openevolve:telemetry_repair
+telemetry_repair/shinkaevolve:telemetry_repair
+
+# Transaction Scheduling (Database Workload Optimization)
+txn_scheduling/human_SOTA:txn_scheduling
+txn_scheduling/gepa:txn_scheduling
+txn_scheduling/openevolve:txn_scheduling
+txn_scheduling/shinkaevolve:txn_scheduling

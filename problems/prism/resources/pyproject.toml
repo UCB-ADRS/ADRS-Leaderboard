@@ -1,0 +1,15 @@
+[project]
+name = "prism-problem"
+version = "0.1.0"
+description = "Resources for PRISM problem"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = [
+  "numpy>=1.21.0",
+]
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+

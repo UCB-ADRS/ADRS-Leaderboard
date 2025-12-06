@@ -1,0 +1,12 @@
+{
+  "baseline_hit_rate": 0.0696325852726434,
+  "datasets": [
+    "movies.csv",
+    "beer.csv",
+    "BIRD.csv",
+    "PDMX.csv",
+    "products.csv"
+  ],
+  "timestamp": 1765018589.727705
+}
+

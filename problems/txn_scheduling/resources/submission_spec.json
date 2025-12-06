@@ -1,0 +1,5 @@
+{
+  "workloads": ["WORKLOAD_1", "WORKLOAD_2", "WORKLOAD_3"],
+  "timeout_seconds": 600
+}
+

@@ -1,0 +1,10 @@
+{
+  "config_files": [
+    "datasets/examples/config/intra_aws.json",
+    "datasets/examples/config/intra_azure.json",
+    "datasets/examples/config/intra_gcp.json",
+    "datasets/examples/config/inter_agz.json",
+    "datasets/examples/config/inter_gaz2.json"
+  ],
+  "num_vms": 2
+}

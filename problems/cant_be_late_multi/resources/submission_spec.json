@@ -1,0 +1,14 @@
+{
+  "description": "Provide a Strategy implementation for the cant-be-late-multi simulator.",
+  "solution_expectation": {
+    "file": "solution.py",
+    "class_name": "Solution",
+    "solve_signature": "solve(spec_path: str | None = None) -> str | dict",
+    "return_formats": [
+      {"code": "<python source implementing MultiRegionStrategy>"},
+      {"program_path": "relative/or/absolute/path/to/python_file"}
+    ]
+  },
+  "datasets": "Multi-region traces are pre-installed under resources/cant-be-late-simulator/data/converted_multi_region_aligned/",
+  "notes": "You may ignore the spec_path argument if unused. Your strategy should inherit from MultiRegionStrategy and implement the _step method."
+}

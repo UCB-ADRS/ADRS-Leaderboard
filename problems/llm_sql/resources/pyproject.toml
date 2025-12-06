@@ -1,0 +1,19 @@
+[project]
+name = "llm-sql-problem"
+version = "0.1.0"
+description = "Resources for LLM_SQL problem"
+requires-python = ">=3.9"
+license = "MIT"
+dependencies = [
+  "pandas>=2.0",
+  "networkx>=3.0",
+]
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+# Exclude data directories that are not Python packages
+packages = { find = { exclude = ["datasets*", "execution_env*", "__pycache__*", "*.pyc"] } }
+

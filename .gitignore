@@ -1,0 +1,20 @@
+.idea/
+datasets/
+
+**/.DS_Store
+**/__pycache__/
+**/*.pyc
+
+.venv*
+*egg-info*
+
+# Runtime execution environments (created during evaluation, cleaned up after)
+**/execution_env/
+evaluation.log
+
+ADRS-Dev*
+openevolve-mast*
+# Temp files from evaluation
+**/solution_env/
+**/uv.lock
+**/output_ans
