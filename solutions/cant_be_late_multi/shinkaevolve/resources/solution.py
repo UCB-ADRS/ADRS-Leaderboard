@@ -1,10 +1,9 @@
 # EVOLVE-BLOCK-START
 
 import configargparse
-import json
 import logging
-import math
 import typing
+import math
 
 from sky_spot.strategies.multi_strategy import MultiRegionStrategy
 from sky_spot.utils import ClusterType
@@ -14,164 +13,156 @@ if typing.TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-class EvolutionaryStrategy(MultiRegionStrategy):
-    """
-    A robust, stateful, and well-structured strategy for multi-region environments.
-    This initial program serves as a strong and safe starting point for evolution.
-    It correctly handles the object lifecycle, provides a basic caching mechanism,
-    and implements a sound, urgency-based heuristic.
-    """
-    NAME = 'evolutionary_robust_starter'
+class AdaptiveHibernationStrategy(MultiRegionStrategy):
+    NAME = 'adaptive_hibernation_strategy'
 
     def __init__(self, args: configargparse.Namespace):
         super().__init__(args)
-        # --- Framework Lifecycle Note ---
-        # `self.env` and `self.task` are NOT available in `__init__`.
-        # They are initialized later by the framework via the `reset()` method.
-        # Therefore, any attributes that depend on them must be initialized here
-        # as None or empty, and populated in `reset()`.
+        # Region State
+        self.region_stats: typing.Dict[int, typing.Dict[str, float]] = {}
+        self.initialized = False
 
-        # --- State Variables ---
-        self.initialized: bool = False
-        self.region_cache: typing.Dict[int, typing.Dict[str, typing.Any]] = {}
-        self.next_exploration_target_idx: int = 0
-        self.consecutive_failures: int = 0
+        # Drought / Backoff State
+        self.consecutive_dry_switches = 0
+        self.is_waiting = False
+        self.stand_down_until = -1.0
+        self.current_backoff_duration = 2.0  # Starts at 2s
+        self.max_backoff = 32.0              # Deep hibernation cap
+
+        # Hyperparameters
+        self.ema_alpha = 0.2
+        self.prob_weight = 60.0       # High weight to trust EMA
+        self.switch_penalty = 20.0    # Explicit penalty for switching
+        self.drought_threshold = 4    # Set in reset based on topology
+        self.start_buffer = 0.25      # 25% initial slack
+        self.base_panic_urgency = 0.95
 
     def reset(self, env: 'env.Env', task: 'task.Task'):
-        """Called by the framework to initialize environment-dependent state."""
         super().reset(env, task)
-        # Initialize the cache for all known regions
-        for i in range(self.env.get_num_regions()):
-            self.region_cache[i] = {
-                'has_spot': None,
-                'last_checked': -1,
-                'success_count': 0
-            }
-        self.consecutive_failures = 0
-        self.initialized = True
-        logger.info(f"{self.NAME} strategy has been reset and initialized.")
-
-    def _get_urgency(self) -> float:
-        """
-        Calculates the urgency as (Work Remaining / Time Remaining).
-        Returns a float. > 1.0 means impossible to finish without restart overheads.
-        """
-        if self.task_done:
-            return 0.0
-
-        work_remaining = self.task_duration - sum(self.task_done_time)
-        time_remaining = self.deadline - self.env.elapsed_seconds
-
-        if time_remaining <= 0.001:
-            return 100.0  # Max urgency
-
-        return work_remaining / time_remaining
-
-    def _choose_exploration_target(self) -> int:
-        """
-        Selects the best region to explore based on cached spot availability, recency, and historical success.
-        """
-        current_idx = self.env.get_current_region()
         num_regions = self.env.get_num_regions()
-
-        if num_regions <= 1:
-            return current_idx
-
-        best_idx = (current_idx + 1) % num_regions
-        best_score = -float('inf')
+        # Topology-Adaptive Drought Thresholds
+        self.drought_threshold = max(2, num_regions)
 
         for i in range(num_regions):
-            if i == current_idx:
-                continue
+            self.region_stats[i] = {
+                'prob': 0.5,
+                'last_checked': -300.0
+            }
+        self.initialized = True
+        self.consecutive_dry_switches = 0
+        self.is_waiting = False
+        self.stand_down_until = -1.0
+        self.current_backoff_duration = 2.0
+        logger.info(f"{self.NAME} reset. Deadline: {self.deadline}")
 
-            stats = self.region_cache.get(i)
-            if not stats:
-                continue
+    def _step(self, last_cluster_type: ClusterType, has_spot: bool) -> ClusterType:
+        if not self.initialized or self.task.is_done:
+            return ClusterType.NONE
 
-            score = 0.0
+        current_region = self.env.get_current_region()
+        now = self.env.elapsed_seconds
 
-            # 1. Base Preference
-            if stats['has_spot'] is True:
-                score += 2000.0
-            elif stats['has_spot'] is False:
-                score -= 1000.0
+        # 1. Handle Stand-Down / Waiting Logic
+        if self.is_waiting:
+            if now < self.stand_down_until:
+                return ClusterType.NONE
 
-            # 2. Weighted Staleness
-            # Recency is weighted by historical success to revisit good regions faster.
-            last_checked = stats['last_checked']
-            if last_checked < 0:
-                staleness = 5000.0  # High priority for unvisited
+            # Wake up from stand-down
+            self.is_waiting = False
+
+            if has_spot:
+                # Success!
+                self.current_backoff_duration = 2.0
             else:
-                staleness = self.env.elapsed_seconds - last_checked
-                # Cap staleness to prevent it from infinitely overriding the "no spot" penalty
-                # unless a significant amount of time has passed (e.g., 20 mins).
-                # 1200s * 1.0 = 1200 > 1000 (overcomes penalty).
-                if staleness > 1200.0:
-                    staleness = 1200.0
+                # Failure after wait. Apply softer penalty to avoid thrashing.
+                self.region_stats[current_region]['prob'] *= 0.8
+                # Extended Hibernation Cap
+                self.current_backoff_duration = min(self.current_backoff_duration * 2.0, self.max_backoff)
 
-            success_count = stats.get('success_count', 0)
-            if success_count > 0:
-                # Logarithmic boost: 10 successes -> ~3.4x multiplier
-                staleness *= (1.0 + math.log(1 + success_count))
+        # 2. Update EMA Beliefs
+        stats = self.region_stats[current_region]
+        obs = 1.0 if has_spot else 0.0
+        stats['prob'] = stats['prob'] * (1.0 - self.ema_alpha) + obs * self.ema_alpha
+        stats['last_checked'] = now
 
-            score += staleness
+        if has_spot:
+            # Found a spot (either immediately or after wait)
+            self.consecutive_dry_switches = 0
+            self.stand_down_until = -1.0
+            self.current_backoff_duration = 2.0 # Reset backoff
+            return ClusterType.SPOT
+
+        # 3. Panic Checks (Cubic Funnel + Continuous Modulated Urgency)
+        work_rem = self.task_duration - sum(self.task_done_time)
+        time_rem = self.deadline - now
+
+        if time_rem <= 1e-9:
+            return ClusterType.ON_DEMAND
+
+        # Continuous Panic Modulation:
+        # Relax panic threshold if we are switching often (desperate) or waking from deep sleep.
+        relaxation = 0.01 * self.consecutive_dry_switches
+        if self.current_backoff_duration > 2.0:
+            relaxation += 0.03
+
+        panic_threshold = min(0.99, self.base_panic_urgency + relaxation)
+
+        urgency = work_rem / time_rem
+        if urgency > panic_threshold:
+            return ClusterType.ON_DEMAND
+
+        # Cubic Funnel
+        time_ratio = now / self.deadline
+        completion_ratio = sum(self.task_done_time) / self.task_duration
+
+        # Buffer decreases cubically: 0.25 -> 0.0
+        current_buffer = max(0.0, self.start_buffer * (1.0 - (time_ratio ** 3)))
+        required_ratio = time_ratio - current_buffer
+
+        if completion_ratio < required_ratio:
+            return ClusterType.ON_DEMAND
+
+        # 4. Smart Exploration & Switching
+        best_region = -1
+        best_score = -float('inf')
+
+        # Deadline-Decaying Exploration (Staleness Damping)
+        staleness_damping = max(0.0, 1.0 - (time_ratio ** 4))
+
+        for r_idx, r_stats in self.region_stats.items():
+            if r_idx == current_region:
+                staleness = 0.0
+                switch_cost = 0.0
+            else:
+                raw_staleness = now - r_stats['last_checked']
+                if r_stats['last_checked'] < 0:
+                    raw_staleness = 1000.0
+
+                staleness = raw_staleness * staleness_damping
+                switch_cost = self.switch_penalty
+
+            score = (r_stats['prob'] * self.prob_weight) + staleness - switch_cost
 
             if score > best_score:
                 best_score = score
-                best_idx = i
+                best_region = r_idx
 
-        return best_idx
+        # Decision
+        if best_region != -1 and best_region != current_region:
+            self.consecutive_dry_switches += 1
 
-    def _step(self, last_cluster_type: ClusterType, has_spot: bool) -> ClusterType:
-        """
-        Adaptive strategy step using urgency, cached region info, and failure tracking.
-        """
-        if not self.initialized or self.task_done:
-            return ClusterType.NONE
-
-        current_region_idx = self.env.get_current_region()
-
-        # Update cache
-        self.region_cache[current_region_idx]['has_spot'] = has_spot
-        self.region_cache[current_region_idx]['last_checked'] = self.env.elapsed_seconds
-
-        if has_spot:
-            self.consecutive_failures = 0
-            self.region_cache[current_region_idx]['success_count'] = \
-                self.region_cache[current_region_idx].get('success_count', 0) + 1
-        else:
-            self.consecutive_failures += 1
-
-        urgency = self._get_urgency()
-
-        # Dynamic Panic Threshold
-        # Standard threshold is 0.95 (close to deadline but safe).
-        # If we have cycled all regions without finding spot, the environment is saturated.
-        # Lower threshold to 0.85 to stop burning time on futile exploration.
-        panic_threshold = 0.95
-        if self.consecutive_failures >= self.env.get_num_regions():
-            panic_threshold = 0.85
-
-        if urgency > panic_threshold:
-            if has_spot:
-                return ClusterType.SPOT
+            if self.consecutive_dry_switches >= self.drought_threshold:
+                # Enter Stand-Down
+                self.is_waiting = True
+                self.stand_down_until = now + self.current_backoff_duration
+                self.consecutive_dry_switches = 0
+                return ClusterType.NONE
             else:
-                return ClusterType.ON_DEMAND
+                self.env.switch_region(best_region)
 
-        # Normal Operation
-        if has_spot:
-            return ClusterType.SPOT
-        else:
-            # Explore
-            target = self._choose_exploration_target()
-            self.env.switch_region(target)
-            return ClusterType.NONE
+        return ClusterType.NONE
 
-    @classmethod
-    def _from_args(cls, parser):
-        args, _ = parser.parse_known_args()
-        return cls(args)
-
+# EVOLVE-BLOCK-END
 
 # Solution class wrapper for evaluator compatibility
 from pathlib import Path

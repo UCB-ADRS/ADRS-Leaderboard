@@ -3,7 +3,7 @@ from sky_spot.strategies.strategy import Strategy
 from sky_spot.utils import ClusterType
 
 class ImprovedEvolveStrategy(Strategy):
-    NAME = 'gepa_cbl_strategy_v1'
+    NAME = 'improved_evolve_strategy'
     
     def __init__(self, args):
         super().__init__(args)

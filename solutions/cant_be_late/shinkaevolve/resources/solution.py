@@ -225,7 +225,7 @@ class AdaptiveBrakeStrategy(Strategy):
     def _from_args(cls, parser):
         args, _ = parser.parse_known_args()
         return cls(args)
-
+# EVOLVE-BLOCK-END
 
 # Solution class wrapper for evaluator compatibility
 from pathlib import Path

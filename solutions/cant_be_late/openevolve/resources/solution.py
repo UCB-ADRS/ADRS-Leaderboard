@@ -170,7 +170,7 @@ class GreedySafetyStrategy(Strategy):
         args, _ = parser.parse_known_args()
         return cls(args)
 
-
+# EVOLVE-BLOCK END
 
 # Solution class wrapper for evaluator compatibility
 from pathlib import Path
@@ -183,3 +183,4 @@ class Solution:
         end_idx = next(i for i, line in enumerate(lines) if "class Solution:" in line)
         program_code = "\n".join(lines[:end_idx])
         return {"code": program_code}
+
