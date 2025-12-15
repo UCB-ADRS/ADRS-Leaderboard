@@ -17,7 +17,6 @@ Evaluation framework for [AI-Driven Research Systems (ADRS)](https://ucbskyadrs.
 - [Multi-region data transfer (Cloudcast)](problems/cloudcast)
 - [Multi-agent system design](problems/multiagent_system)
 - [ML model placement (PRISM)](problems/prism)
-- [Network telemetry repair](problems/telemetry_repair)
 
 Each problem directory contains detailed documentation in its `README.md`.
 

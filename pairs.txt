@@ -28,12 +28,6 @@ cloudcast/gepa:cloudcast
 cloudcast/openevolve:cloudcast
 cloudcast/shinkaevolve:cloudcast
 
-# Telemetry Repair (Network Telemetry Data Repair)
-telemetry_repair/human_SOTA:telemetry_repair
-telemetry_repair/gepa:telemetry_repair
-telemetry_repair/openevolve:telemetry_repair
-telemetry_repair/shinkaevolve:telemetry_repair
-
 # Transaction Scheduling (Database Workload Optimization)
 txn_scheduling/human_SOTA:txn_scheduling
 txn_scheduling/gepa:txn_scheduling
