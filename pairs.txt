@@ -6,18 +6,21 @@ llm_sql/human_SOTA:llm_sql
 llm_sql/openevolve:llm_sql
 llm_sql/shinkaevolve:llm_sql
 llm_sql/gepa:llm_sql
+llm_sql/LEVI:llm_sql
 
 # EPLB (Expert Parallelism Load Balancer)
 eplb/human_SOTA:eplb
 eplb/openevolve:eplb
 eplb/shinkaevolve:eplb
 eplb/gepa:eplb
+eplb/LEVI:eplb
 
 # PRISM (GPU Model Placement)
 prism/human_SOTA:prism
 prism/gepa:prism
 prism/openevolve:prism
 prism/shinkaevolve:prism
+prism/LEVI:prism
 
 # Multiagent System
 multiagent_system/baseline:multiagent_system
@@ -27,9 +30,15 @@ cloudcast/baseline:cloudcast
 cloudcast/gepa:cloudcast
 cloudcast/openevolve:cloudcast
 cloudcast/shinkaevolve:cloudcast
+cloudcast/LEVI:cloudcast
 
 # Transaction Scheduling (Database Workload Optimization)
 txn_scheduling/human_SOTA:txn_scheduling
 txn_scheduling/gepa:txn_scheduling
 txn_scheduling/openevolve:txn_scheduling
 txn_scheduling/shinkaevolve:txn_scheduling
+txn_scheduling/LEVI:txn_scheduling
+
+# Spot Scheduling
+cant_be_late/LEVI:cant_be_late
+cant_be_late_multi/LEVI:cant_be_late_multi
