@@ -173,7 +173,7 @@ def load_program_module(program_path: Path) -> ModuleType:
 
 def evaluate_placement_algorithm(program_module: ModuleType) -> Dict[str, Any]:
     """Evaluate the model placement algorithm with 0-100 scoring"""
-    if not hasattr(program_module, "compute_model_placement"):
+    def invalid_result(message: str) -> Dict[str, Any]:
         return {
             "score": 0.0,
             "avg_kvpr": 0.0,
@@ -181,8 +181,11 @@ def evaluate_placement_algorithm(program_module: ModuleType) -> Dict[str, Any]:
             "optimal_kvpr": 0.0,
             "success_rate": 0.0,
             "runs_successfully": 0.0,
-            "error": "Missing compute_model_placement function",
+            "error": message,
         }
+
+    if not hasattr(program_module, "compute_model_placement"):
+        return invalid_result("Missing compute_model_placement function")
 
     test_gpu_models = generate_test_gpu_models()
 
@@ -212,8 +215,34 @@ def evaluate_placement_algorithm(program_module: ModuleType) -> Dict[str, Any]:
             execution_time = time.time() - start_time
 
             if not isinstance(result, dict):
-                print(f"Placement {i}: Invalid result format", file=sys.stderr)
-                continue
+                return invalid_result(f"Expected dict, got {type(result).__name__}")
+
+            placed_models = []
+            for gpu_id, assigned_models in result.items():
+                if not isinstance(assigned_models, list):
+                    return invalid_result(
+                        f"GPU {gpu_id} value must be list, got {type(assigned_models).__name__}"
+                    )
+                placed_models.extend(assigned_models)
+
+            if len(placed_models) != len(gpu_models):
+                return invalid_result(f"Not all models placed: {len(placed_models)}/{len(gpu_models)}")
+
+            placed_ids = [id(m) for m in placed_models]
+            if len(set(placed_ids)) != len(placed_ids):
+                duplicates = len(placed_ids) - len(set(placed_ids))
+                return invalid_result(f"Duplicate models detected: {duplicates} duplicates")
+
+            original_ids = {id(m) for m in gpu_models}
+            if set(placed_ids) != original_ids:
+                return invalid_result("Placed models don't match input models (missing or foreign models)")
+
+            for gpu_id, assigned_models in result.items():
+                total_size = sum(model.model_size for model in assigned_models)
+                if total_size > GPU_MEM_SIZE:
+                    return invalid_result(
+                        f"GPU {gpu_id} exceeds memory: {total_size}GB > {GPU_MEM_SIZE}GB"
+                    )
 
             solution_kvpr = calculate_kvcache_pressure(result)
             
