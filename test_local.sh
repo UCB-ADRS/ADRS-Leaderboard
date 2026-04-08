@@ -41,7 +41,7 @@ run_single_evaluation() {
         return 1
     fi
 
-    if [ ! -d "$BASE_DIR/solutions/$SOLUTION_NAME" ]; then
+    if [ ! -d "$BASE_DIR/solutions/$PROBLEM_NAME/$SOLUTION_NAME" ]; then
         echo "ERROR: Solution '$SOLUTION_NAME' not found" >&2
         return 1
     fi
@@ -73,7 +73,7 @@ run_single_evaluation() {
 
     # Prepare solution
     echo "[INFO] Preparing solution '${SOLUTION_NAME}'..."
-    cd "solutions/${SOLUTION_NAME}"
+    cd "solutions/${PROBLEM_NAME}/${SOLUTION_NAME}"
 
     # Run prepare_env.sh if it exists
     if [ -f "./prepare_env.sh" ]; then
@@ -96,7 +96,7 @@ run_single_evaluation() {
 
     # Run solution
     echo "[INFO] Running solution..."
-    cd "solutions/${SOLUTION_NAME}"
+    cd "solutions/${PROBLEM_NAME}/${SOLUTION_NAME}"
     # Export PROBLEM_NAME for solve.sh to use
     export PROBLEM_NAME
     if [ -f "./solve.sh" ]; then

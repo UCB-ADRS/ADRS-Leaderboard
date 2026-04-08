@@ -31,6 +31,7 @@ cloudcast/gepa:cloudcast
 cloudcast/openevolve:cloudcast
 cloudcast/shinkaevolve:cloudcast
 cloudcast/LEVI:cloudcast
+cloudcast/glia:cloudcast
 
 # Transaction Scheduling (Database Workload Optimization)
 txn_scheduling/human_SOTA:txn_scheduling
