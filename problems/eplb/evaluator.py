@@ -208,7 +208,7 @@ def evaluate_program(program_module: ModuleType) -> EvaluationResult:
     
     for i in range(len(workloads) - 1):
         start_time = time.perf_counter()
-        _, log2phy, logcnt = program_module.rebalance_experts(
+        phy2log, log2phy, logcnt = program_module.rebalance_experts(
             workloads[i],
             NUM_REPLICAS,
             NUM_GROUPS,
@@ -216,6 +216,62 @@ def evaluate_program(program_module: ModuleType) -> EvaluationResult:
             NUM_GPUS,
         )
         end_time_algorithm = time.perf_counter()
+
+        # Validate outputs before scoring to prevent reward hacking
+        if phy2log.shape[1] != NUM_REPLICAS:
+            return {
+                "balancedness_score_gpu": 0.0,
+                "balancedness_score_expert": 0.0,
+                "times_algorithm": 0.0,
+                "times_inference": 0.0,
+                "balancedness_score": 0.0,
+                "speed_score": 0.0,
+                "score": 0.0,
+                "error": f"phy2log shape wrong: {tuple(phy2log.shape)}",
+            }
+
+        if not torch.all(logcnt.sum(dim=1) == NUM_REPLICAS):
+            sums = logcnt.sum(dim=1)
+            return {
+                "balancedness_score_gpu": 0.0,
+                "balancedness_score_expert": 0.0,
+                "times_algorithm": 0.0,
+                "times_inference": 0.0,
+                "balancedness_score": 0.0,
+                "speed_score": 0.0,
+                "score": 0.0,
+                "error": f"logcnt sums != {NUM_REPLICAS}: {sums[:5].tolist()}...",
+            }
+
+        if (logcnt < 0).any():
+            return {
+                "balancedness_score_gpu": 0.0,
+                "balancedness_score_expert": 0.0,
+                "times_algorithm": 0.0,
+                "times_inference": 0.0,
+                "balancedness_score": 0.0,
+                "speed_score": 0.0,
+                "score": 0.0,
+                "error": "logcnt contains negative values",
+            }
+
+        next_workload = workloads[i + 1]
+        has_load = next_workload > 0
+        has_no_replicas = logcnt == 0
+        unhandled = has_load & has_no_replicas
+        if unhandled.any():
+            unhandled_count = int(unhandled.sum().item())
+            return {
+                "balancedness_score_gpu": 0.0,
+                "balancedness_score_expert": 0.0,
+                "times_algorithm": 0.0,
+                "times_inference": 0.0,
+                "balancedness_score": 0.0,
+                "speed_score": 0.0,
+                "score": 0.0,
+                "error": f"Unhandled load: {unhandled_count} experts have load but 0 replicas",
+            }
+
         balancedness_score_gpu, balancedness_score_expert = simulate_inference(log2phy, logcnt, workloads[i + 1])
         end_time = time.perf_counter()
         
